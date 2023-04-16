@@ -110,7 +110,9 @@ const int cert_len = 386;
 }
 
 + (NSData *)signData:(NSData *)msg {
-  EVP_MD_CTX ctx;
+EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+EVP_CIPHER_CTX_init(ctx);
+//  EVP_MD_CTX ctx;
   const unsigned char *cmsg = (const unsigned char *)[msg bytes];
   unsigned char *sig;
   unsigned int len;
@@ -121,12 +123,14 @@ const int cert_len = 386;
   ec = d2i_ECPrivateKey(NULL, &priv_cpy, priv_len);
   if (ec == NULL) {
     printf("error importing private key\n");
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
   if (EC_KEY_check_key(ec) != 1) {
     printf("error checking key\n");
     EC_KEY_free(ec);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
@@ -134,6 +138,7 @@ const int cert_len = 386;
   if (pkey == NULL) {
     printf("failed to init pkey\n");
     EC_KEY_free(ec);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
@@ -141,6 +146,7 @@ const int cert_len = 386;
     printf("failed to assing ec to pkey\n");
     EC_KEY_free(ec);
     EVP_PKEY_free(pkey);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
@@ -149,12 +155,14 @@ const int cert_len = 386;
   if (EVP_SignInit(&ctx, EVP_sha256()) != 1) {
     printf("failed to init signing context\n");
     EVP_PKEY_free(pkey);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   };
 
   if (EVP_SignUpdate(&ctx, cmsg, (unsigned int)[msg length]) != 1) {
     printf("failed to update digest\n");
     EVP_PKEY_free(pkey);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
@@ -162,6 +170,7 @@ const int cert_len = 386;
   if (sig == NULL) {
     printf("failed to malloc for sig\n");
     EVP_PKEY_free(pkey);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
@@ -169,6 +178,7 @@ const int cert_len = 386;
     printf("failed to finalize digest\n");
     free(sig);
     EVP_PKEY_free(pkey);
+      EVP_CIPHER_CTX_free(ctx);
     return nil;
   }
 
